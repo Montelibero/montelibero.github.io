@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Check token</title>
+  <script src="https://docs.getgrist.com/grist-plugin-api.js"></script>
+</head>
+<body>
+  <pre id="readout">Waiting for data...</pre>
+  <script>
+    grist.ready();
+    grist.onRecord(async function(record) {
+      // Получаем информацию о токене
+      const tokenInfo = await grist.docApi.getAccessToken({readOnly: true});
+      // Выводим информацию о токене в элемент <pre>
+      document.getElementById('readout').innerHTML = JSON.stringify(tokenInfo, null, 2);
+    });
+  </script>
+</body>
+</html>
