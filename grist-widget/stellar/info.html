@@ -21,7 +21,7 @@
 
       function displayBalances(balances) {
         const balanceTable = document.getElementById('balanceTable');
-        balanceTable.innerHTML = '<tr><th>Asset Code</th><th>Balance</th></tr>'; // Заголовок таблицы
+        balanceTable.innerHTML = '<tr><th>Asset Code</th><th>Balance</th></tr>';
 
         balances.forEach(balance => {
           const row = document.createElement('tr');
@@ -34,31 +34,64 @@
 
       function displayData(data) {
         const dataTable = document.getElementById('dataTable');
-        dataTable.innerHTML = '<tr><th>Key</th><th>Value</th></tr>'; // Заголовок таблицы
+        dataTable.innerHTML = '<tr><th>Key</th><th>Value</th></tr>';
 
         for (const [key, value] of Object.entries(data)) {
           const row = document.createElement('tr');
-          const decodedValue = atob(value); // Декодирование из base64
+          const decodedValue = atob(value);
           row.innerHTML = `<td>${key}</td><td>${decodedValue}</td>`;
           dataTable.appendChild(row);
+        }
+      }
+
+      async function fetchAndDisplayBSNData(accountAddress) {
+        const url = 'https://bsn.mtla.me/json';
+        try {
+          const response = await fetch(url);
+          if (!response.ok) {
+            throw new Error('Network response was not ok');
+          }
+          const data = await response.json();
+          const accounts = data.accounts;
+          const bsnTable = document.getElementById('bsnTable');
+          bsnTable.innerHTML = '<tr><th>Tag</th><th>Account ID</th></tr>';
+
+          for (const accountId in accounts) {
+            if (accounts.hasOwnProperty(accountId)) {
+              const account = accounts[accountId];
+              const tags = account.tags;
+
+              for (const tag in tags) {
+                if (tags.hasOwnProperty(tag)) {
+                  if (tags[tag].includes(accountAddress)) {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `<td>${tag}</td><td>${accountId}</td>`;
+                    bsnTable.appendChild(row);
+                  }
+                }
+              }
+            }
+          }
+        } catch (error) {
+          console.error('Error fetching BSN data:', error);
         }
       }
 
       grist.ready();
       grist.onRecord(async function(record) {
         const stellarAddress = record.STELLAR;
-        document.getElementById('readout').innerHTML = record.STELLAR;
+        document.getElementById('readout').innerHTML = stellarAddress;
 
-        // Добавим ссылки на Stellar Expert и Scopuly
         document.getElementById('stellarExpertLink').href = `https://stellar.expert/explorer/public/account/${stellarAddress}`;
         document.getElementById('scopulyLink').href = `https://scopuly.com/account/${stellarAddress}`;
         
-        // Получаем данные из Stellar и отображаем их
         const accountData = await fetchAccountData(stellarAddress);
         if (accountData) {
           displayBalances(accountData.balances || []);
           displayData(accountData.data || {});
         }
+
+        fetchAndDisplayBSNData(stellarAddress);
       });
     </script>
   </head>
@@ -79,6 +112,11 @@
     <h2>Data</h2>
     <table id="dataTable" border="1">
       <!-- Данные будут вставлены сюда -->
+    </table>
+
+    <h2>BSN Income Tags</h2>
+    <table id="bsnTable" border="1">
+      <!-- Результаты BSN будут вставлены сюда -->
     </table>
   </body>
 </html>
