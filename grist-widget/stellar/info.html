@@ -5,6 +5,8 @@
     <title>Stellar Info</title>
     <script src="https://docs.getgrist.com/grist-plugin-api.js"></script>
     <script>
+      let widgetOptions;
+
       async function fetchAccountData(stellarAddress) {
         try {
           const response = await fetch(`https://horizon.stellar.org/accounts/${stellarAddress}`);
@@ -78,16 +80,18 @@
       }
 
       grist.ready({
-          requiredAccess: 'read table',
-          columns: [{ name: 'stellarAddress', title: 'Stellar Address', type: 'Text' }]
+        requiredAccess: 'read table',
+        columns: [{ name: 'stellarAddress', title: 'Stellar Address', type: 'Text' }]
       });
-      grist.onRecord(async function(record) {
+
+      grist.onRecord(async function(record, options) {
+        widgetOptions = options;
         const stellarAddress = record[widgetOptions.stellarAddress];
         document.getElementById('readout').innerHTML = stellarAddress;
 
         document.getElementById('stellarExpertLink').href = `https://stellar.expert/explorer/public/account/${stellarAddress}`;
         document.getElementById('scopulyLink').href = `https://scopuly.com/account/${stellarAddress}`;
-        
+
         const accountData = await fetchAccountData(stellarAddress);
         if (accountData) {
           displayBalances(accountData.balances || []);
