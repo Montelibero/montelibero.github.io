@@ -77,9 +77,12 @@
         }
       }
 
-      grist.ready();
+      grist.ready({
+          requiredAccess: 'read table',
+          columns: [{ name: 'stellarAddress', title: 'Stellar Address', type: 'Text' }]
+      });
       grist.onRecord(async function(record) {
-        const stellarAddress = record.STELLAR;
+        const stellarAddress = record[widgetOptions.stellarAddress];
         document.getElementById('readout').innerHTML = stellarAddress;
 
         document.getElementById('stellarExpertLink').href = `https://stellar.expert/explorer/public/account/${stellarAddress}`;
