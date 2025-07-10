@@ -34,6 +34,11 @@
         });
       }
 
+      function displayEmptyBalances() {
+        const balanceTable = document.getElementById('balanceTable');
+        balanceTable.innerHTML = '<tr><th>Asset Code</th><th>Balance</th></tr><tr><td colspan="2">Нет данных</td></tr>';
+      }
+
       function displayData(data) {
         const dataTable = document.getElementById('dataTable');
         dataTable.innerHTML = '<tr><th>Key</th><th>Value</th></tr>';
@@ -44,6 +49,16 @@
           row.innerHTML = `<td>${key}</td><td>${decodedValue}</td>`;
           dataTable.appendChild(row);
         }
+      }
+
+      function displayEmptyData() {
+        const dataTable = document.getElementById('dataTable');
+        dataTable.innerHTML = '<tr><th>Key</th><th>Value</th></tr><tr><td colspan="2">Нет данных</td></tr>';
+      }
+
+      function displayEmptyBSN() {
+        const bsnTable = document.getElementById('bsnTable');
+        bsnTable.innerHTML = '<tr><th>Tag</th><th>Account ID</th></tr><tr><td colspan="2">Нет данных</td></tr>';
       }
 
       async function fetchAndDisplayBSNData(accountAddress) {
@@ -87,6 +102,25 @@
       grist.onRecord(async function(record, options) {
         widgetOptions = options;
         const stellarAddress = record[widgetOptions.stellarAddress];
+        
+        // Check if stellar address is empty or missing
+        if (!stellarAddress || stellarAddress.trim() === '') {
+          // Display "Address not found" message
+          document.getElementById('readout').innerHTML = 'Адрес не найден';
+          
+          // Clear/disable external links
+          document.getElementById('stellarExpertLink').href = '#';
+          document.getElementById('scopulyLink').href = '#';
+          
+          // Display placeholder messages in all tables
+          displayEmptyBalances();
+          displayEmptyData();
+          displayEmptyBSN();
+          
+          return; // Exit early, don't make API calls
+        }
+
+        // Valid address - proceed with existing logic
         document.getElementById('readout').innerHTML = stellarAddress;
 
         document.getElementById('stellarExpertLink').href = `https://stellar.expert/explorer/public/account/${stellarAddress}`;
