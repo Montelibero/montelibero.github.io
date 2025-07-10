@@ -7,6 +7,53 @@
     <script>
       let widgetOptions;
 
+      function clearAllTables() {
+        // Очищаем таблицы балансов
+        const balanceTable = document.getElementById('balanceTable');
+        balanceTable.innerHTML = '<tr><th>Asset Code</th><th>Balance</th></tr><tr><td colspan="2">Нет данных</td></tr>';
+        
+        // Очищаем таблицу данных
+        const dataTable = document.getElementById('dataTable');
+        dataTable.innerHTML = '<tr><th>Key</th><th>Value</th></tr><tr><td colspan="2">Нет данных</td></tr>';
+        
+        // Очищаем таблицу BSN
+        const bsnTable = document.getElementById('bsnTable');
+        bsnTable.innerHTML = '<tr><th>Tag</th><th>Account ID</th></tr><tr><td colspan="2">Нет данных</td></tr>';
+      }
+
+      function resetLinks() {
+        // Сбрасываем ссылки
+        document.getElementById('stellarExpertLink').href = '#';
+        document.getElementById('scopulyLink').href = '#';
+        
+        // Делаем ссылки неактивными
+        document.getElementById('stellarExpertLink').style.pointerEvents = 'none';
+        document.getElementById('stellarExpertLink').style.color = 'gray';
+        document.getElementById('scopulyLink').style.pointerEvents = 'none';
+        document.getElementById('scopulyLink').style.color = 'gray';
+      }
+
+      function activateLinks(stellarAddress) {
+        // Восстанавливаем ссылки
+        document.getElementById('stellarExpertLink').href = `https://stellar.expert/explorer/public/account/${stellarAddress}`;
+        document.getElementById('scopulyLink').href = `https://scopuly.com/account/${stellarAddress}`;
+        
+        // Делаем ссылки активными
+        document.getElementById('stellarExpertLink').style.pointerEvents = 'auto';
+        document.getElementById('stellarExpertLink').style.color = '';
+        document.getElementById('scopulyLink').style.pointerEvents = 'auto';
+        document.getElementById('scopulyLink').style.color = '';
+      }
+
+      function isValidStellarAddress(address) {
+        // Проверяем, что адрес не пустой и имеет правильную длину
+        return address && 
+               typeof address === 'string' && 
+               address.trim().length > 0 && 
+               address.trim().length === 56 && 
+               address.trim().startsWith('G');
+      }
+
       async function fetchAccountData(stellarAddress) {
         try {
           const response = await fetch(`https://horizon.stellar.org/accounts/${stellarAddress}`);
@@ -25,6 +72,13 @@
         const balanceTable = document.getElementById('balanceTable');
         balanceTable.innerHTML = '<tr><th>Asset Code</th><th>Balance</th></tr>';
 
+        if (balances.length === 0) {
+          const row = document.createElement('tr');
+          row.innerHTML = '<td colspan="2">Нет данных</td>';
+          balanceTable.appendChild(row);
+          return;
+        }
+
         balances.forEach(balance => {
           const row = document.createElement('tr');
           const assetCode = balance.asset_code || 'XLM';
@@ -38,7 +92,15 @@
         const dataTable = document.getElementById('dataTable');
         dataTable.innerHTML = '<tr><th>Key</th><th>Value</th></tr>';
 
-        for (const [key, value] of Object.entries(data)) {
+        const dataEntries = Object.entries(data);
+        if (dataEntries.length === 0) {
+          const row = document.createElement('tr');
+          row.innerHTML = '<td colspan="2">Нет данных</td>';
+          dataTable.appendChild(row);
+          return;
+        }
+
+        for (const [key, value] of dataEntries) {
           const row = document.createElement('tr');
           const decodedValue = atob(value);
           row.innerHTML = `<td>${key}</td><td>${decodedValue}</td>`;
@@ -58,6 +120,7 @@
           const bsnTable = document.getElementById('bsnTable');
           bsnTable.innerHTML = '<tr><th>Tag</th><th>Account ID</th></tr>';
 
+          let hasResults = false;
           for (const accountId in accounts) {
             if (accounts.hasOwnProperty(accountId)) {
               const account = accounts[accountId];
@@ -69,13 +132,22 @@
                     const row = document.createElement('tr');
                     row.innerHTML = `<td>${tag}</td><td>${accountId}</td>`;
                     bsnTable.appendChild(row);
+                    hasResults = true;
                   }
                 }
               }
             }
           }
+
+          if (!hasResults) {
+            const row = document.createElement('tr');
+            row.innerHTML = '<td colspan="2">Нет данных</td>';
+            bsnTable.appendChild(row);
+          }
         } catch (error) {
           console.error('Error fetching BSN data:', error);
+          const bsnTable = document.getElementById('bsnTable');
+          bsnTable.innerHTML = '<tr><th>Tag</th><th>Account ID</th></tr><tr><td colspan="2">Нет данных</td></tr>';
         }
       }
 
@@ -87,15 +159,27 @@
       grist.onRecord(async function(record, options) {
         widgetOptions = options;
         const stellarAddress = record[widgetOptions.stellarAddress];
-        document.getElementById('readout').innerHTML = stellarAddress;
+        
+        // Проверяем, есть ли валидный Stellar-адрес
+        if (!isValidStellarAddress(stellarAddress)) {
+          // Если адрес пустой или невалидный
+          document.getElementById('readout').innerHTML = 'Адрес не найден';
+          clearAllTables();
+          resetLinks();
+          return;
+        }
 
-        document.getElementById('stellarExpertLink').href = `https://stellar.expert/explorer/public/account/${stellarAddress}`;
-        document.getElementById('scopulyLink').href = `https://scopuly.com/account/${stellarAddress}`;
+        // Если адрес валидный, показываем его и активируем функциональность
+        document.getElementById('readout').innerHTML = stellarAddress;
+        activateLinks(stellarAddress);
 
         const accountData = await fetchAccountData(stellarAddress);
         if (accountData) {
           displayBalances(accountData.balances || []);
           displayData(accountData.data || {});
+        } else {
+          // Если не удалось получить данные аккаунта
+          clearAllTables();
         }
 
         fetchAndDisplayBSNData(stellarAddress);
