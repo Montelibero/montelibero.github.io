@@ -34,6 +34,11 @@
         });
       }
 
+      function clearBalances() {
+        const balanceTable = document.getElementById('balanceTable');
+        balanceTable.innerHTML = '<tr><th>Asset Code</th><th>Balance</th></tr><tr><td colspan="2">Нет данных</td></tr>';
+      }
+
       function displayData(data) {
         const dataTable = document.getElementById('dataTable');
         dataTable.innerHTML = '<tr><th>Key</th><th>Value</th></tr>';
@@ -44,6 +49,11 @@
           row.innerHTML = `<td>${key}</td><td>${decodedValue}</td>`;
           dataTable.appendChild(row);
         }
+      }
+
+      function clearData() {
+        const dataTable = document.getElementById('dataTable');
+        dataTable.innerHTML = '<tr><th>Key</th><th>Value</th></tr><tr><td colspan="2">Нет данных</td></tr>';
       }
 
       async function fetchAndDisplayBSNData(accountAddress) {
@@ -79,6 +89,11 @@
         }
       }
 
+      function clearBSNData() {
+        const bsnTable = document.getElementById('bsnTable');
+        bsnTable.innerHTML = '<tr><th>Tag</th><th>Account ID</th></tr><tr><td colspan="2">Нет данных</td></tr>';
+      }
+
       grist.ready({
         requiredAccess: 'full',
         columns: [{ name: 'stellarAddress', title: 'Stellar Address', type: 'Text' }]
@@ -87,6 +102,25 @@
       grist.onRecord(async function(record, options) {
         widgetOptions = options;
         const stellarAddress = record[widgetOptions.stellarAddress];
+        
+        // Check if stellar address is empty, null, undefined or just whitespace
+        if (!stellarAddress || stellarAddress.toString().trim() === '') {
+          // Clear readout and show "Address not found" message
+          document.getElementById('readout').innerHTML = 'Адрес не найден';
+          
+          // Reset external links
+          document.getElementById('stellarExpertLink').href = '#';
+          document.getElementById('scopulyLink').href = '#';
+          
+          // Clear all tables and show placeholder messages
+          clearBalances();
+          clearData();
+          clearBSNData();
+          
+          return; // Exit early, don't fetch any data
+        }
+        
+        // If we have a valid stellar address, proceed with normal flow
         document.getElementById('readout').innerHTML = stellarAddress;
 
         document.getElementById('stellarExpertLink').href = `https://stellar.expert/explorer/public/account/${stellarAddress}`;
@@ -96,6 +130,10 @@
         if (accountData) {
           displayBalances(accountData.balances || []);
           displayData(accountData.data || {});
+        } else {
+          // If we can't fetch account data, show placeholder messages
+          clearBalances();
+          clearData();
         }
 
         fetchAndDisplayBSNData(stellarAddress);
