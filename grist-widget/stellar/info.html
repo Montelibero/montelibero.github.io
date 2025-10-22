@@ -37,6 +37,7 @@
         // Восстанавливаем ссылки
         document.getElementById('stellarExpertLink').href = `https://stellar.expert/explorer/public/account/${stellarAddress}`;
         document.getElementById('scopulyLink').href = `https://scopuly.com/account/${stellarAddress}`;
+        document.getElementById('BSNLink').href = `https://bsn.expert/accounts/${stellarAddress}`;
         
         // Делаем ссылки активными
         document.getElementById('stellarExpertLink').style.pointerEvents = 'auto';
@@ -191,6 +192,7 @@
     <pre id="readout">Waiting for data...</pre>
 
     <div>
+      <a id="BSNLink" href="#" target="_blank">View on BSN.expert</a>
       <a id="stellarExpertLink" href="#" target="_blank">View on Stellar Expert</a><br>
       <a id="scopulyLink" href="#" target="_blank">View on Scopuly</a>
     </div>
