@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Raw HTML Renderer</title>
+    <!-- Подключаем API Grist -->
+    <script src="https://docs.getgrist.com/grist-plugin-api.js"></script>
+    <style>
+      /* Убираем отступы у body, чтобы HTML из ячейки занимал все место */
+      body {
+        margin: 0;
+        padding: 0;
+        font-family: sans-serif;
+        width: 100%;
+        height: 100%;
+        overflow-x: hidden; /* Скрываем горизонтальную прокрутку, если контент слишком широкий */
+      }
+      
+      /* Стили для сообщения, если колонка не выбрана */
+      #status-message {
+        color: #888;
+        text-align: center;
+        padding: 20px;
+        font-style: italic;
+      }
+    </style>
+  </head>
+  <body>
+    
+    <!-- Сюда будет вставляться ваш HTML -->
+    <div id="content"></div>
+
+    <script>
+      // 1. Сообщаем Grist, что нам нужна одна колонка для чтения
+      grist.ready({
+        requiredAccess: 'read table', // Нам нужно только чтение
+        columns: [
+          { name: 'htmlData', title: 'HTML Column', type: 'Text' }
+        ]
+      });
+
+      // 2. Слушаем изменения в выбранной записи
+      grist.onRecord(function(record, mappings) {
+        const container = document.getElementById('content');
+        
+        // Получаем данные из привязанной колонки
+        // mappings.htmlData хранит имя колонки, record[...] берет ее значение
+        const htmlContent = record[mappings.htmlData];
+
+        // Если данных нет или колонка не выбрана
+        if (!htmlContent) {
+          // Если колонка вообще не настроена в панели справа
+          if (!mappings.htmlData) {
+            container.innerHTML = '<div id="status-message">Пожалуйста, выберите колонку с HTML в настройках виджета.</div>';
+          } else {
+            // Если колонка выбрана, но ячейка пустая
+            container.innerHTML = ''; 
+          }
+          return;
+        }
+
+        // 3. Вставляем HTML из ячейки в контейнер
+        // Внимание: Скрипты <script> внутри innerHTML обычно не исполняются браузером 
+        // из соображений безопасности, но стили <style> и верстка сработают.
+        container.innerHTML = htmlContent;
+      });
+    </script>
+  </body>
+</html>
